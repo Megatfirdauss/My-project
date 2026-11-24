@@ -1,0 +1,8 @@
+{
+  "appId": "ai.venice.spamlab",
+  "appName": "WA Spam Lab",
+  "webDir": "www",
+  "plugins": {
+    "CapacitorHttp": { "enabled": true }
+  }
+}

